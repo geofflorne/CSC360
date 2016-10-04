@@ -106,16 +106,20 @@ int main() {
   proc * ptr = NULL;
   char * input = NULL;
   char * prompt = "PMan: > ";
-  char * tok;
-  int pid;
   char * args[ARGLIMIT];
-  int i;
+  char * tok;
   char * dir;
   char * buff;
+  int pid;
+  int i;
 
   while (1) {
     update_bg_process();
     input = readline(prompt);
+    //go to begining of loop if no input
+    if (strcmp(input, "") == 0){
+      continue;
+    }
     tok = strtok(input, " ");
     //read user imput and take appropriate action
     if (strcmp(tok, "pstat") == 0) {
