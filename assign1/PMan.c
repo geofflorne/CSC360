@@ -8,27 +8,38 @@
 #include <string.h>             //strtok()
 #include <readline/readline.h>  //readline()
 #include <readline/history.h>
-#include <sys/wait.h>
-#include <sys/types.h>
 #include "proc.h"
 
 #define ARGLIMIT 100
 
-void update_bg_procss() {
+void update_bg_process() {
+    usleep(20);
+    int status;
+    int id;
+    int opts = WNOHANG | WUNTRACED | WCONTINUED;
 
     //use while loop to monitor all process with -1 option.
     while(1) {
-    id = waitpid(-1, status, WNOHANG | WUNTRACED | WCONTINUED) to monitor the state of all child process
-    if id = 0 ; none of children changed state, no proc_list update needed. break while loop.
-    if id > 0 ;
-        1 if(WIFSIGNALED(status)) got killed. Inform user that process [id] terminated. remove the item where pid = id in proc_list.
-        2 if(WIFSTOPPED(status)) got stopped. set isStop = 1
-        3 if(WIFCONTINUED(status)) stopped process continues, set isStop back to 0.
-    if id < 0 :
-        no more updates, break while loop.
+
+      id = waitpid(-1, &status, opts);
+      if (id == 0){
+          break;
+      }else if (id > 0){
+        if(WIFEXITED(status)){
+          printf("%d terminated\n", id);
+          delete(id);
+        }else if(WIFSTOPPED(status)){
+          set_isStop(id,1);
+        }else if(WIFCONTINUED(status)){
+          set_isStop(id,0);
+        }
+      }
+      if (id < 0){
+        break;
+      }
     }
 
-    return ;
+    return;
 }
 
 int main(){
@@ -42,51 +53,70 @@ int main(){
     int   i;
 
     while(1) {
-
-        //update_bg_process();
-
+        update_bg_process();
         input = readline(prompt);
         tok = strtok(input, " ");
-        //tok = strtok(NULL, " ");
         if (strcmp(tok, "pstat") == 0){
             //     FILE *fp = popen("/proc/[pid]/stat(status)", "r") ;
             //     read file content using fgets. (see pipe.c)
             //     output variables listed in assign.
         }else if (strcmp(tok, "bg") == 0){
+            tok = strtok(NULL, " ");
+            if(tok == NULL){
+              printf("usage: bg <command>\n");
+              continue;
+            }
             i = 0;
-            //     1. pid = fork();
-            //     2. in child proces :  exec*(cmd)
-            //     3. create a new item in proc_list using malloc().
-            //     4. store pid, cmd, istStop = 0 in new item.
-            //     5. add new item in proc_list.
-            //tok = strtok(NULL, "\0");
+            while(tok != NULL){
+              args[i++] = tok;
+              tok = strtok(NULL, " ");
+            }
+            args[i++] = NULL;
+
             pid = fork();
             if (pid > 0){
-              tok = strtok(NULL, " ");
-              while(tok != NULL){
-                args[i++] = tok;
-                tok = strtok(NULL, " ");
-              }
-              args[i++] = NULL;
-              execvp(args[0], args);
               add(pid, args[0], 0);
-
             }else if (pid == 0){
+              execvp(args[0], args);
 
             }else{
                 printf("fork failed\n");
-                //error
             }
 
 
         }else if (strcmp(tok, "bgkill") == 0){
             //     handle signal using kill() ;
+            tok = strtok(NULL, " ");
+            if(tok == NULL){
+              printf("error: no pid\n");
+            }else{
+              kill(atoi(tok), SIGQUIT);
+              printf("%d terminated\n", atoi(tok));
+              delete(atoi(tok));
+            }
+
         }else if (strcmp(tok, "bgstart") == 0){
             //     handle signal using kill() ;
+            tok = strtok(NULL, " ");
+            if(tok == NULL){
+              printf("error: no pid\n");
+            }else{
+              kill(atoi(tok), SIGCONT);
+              set_isStop(atoi(tok),0);
+            }
+
         }else if (strcmp(tok, "bgstop") == 0){
             //     handle signal using kill() ;
+            tok = strtok(NULL, " ");
+            if(tok == NULL){
+              printf("error: no pid\n");
+            }else{
+              kill(atoi(tok), SIGSTOP);
+              set_isStop(atoi(tok),1);
+            }
+
         }else if (strcmp(tok, "bglist") == 0){
-            //     list all items in proc_list where isStop = 0 ;
+            print_list();
         }else {
           printf("%s: command not found\n", input);
         }
