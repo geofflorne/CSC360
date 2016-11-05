@@ -1,2 +1,2 @@
 # CSC360
-This is my homework
+Homework for CSC360.
