@@ -17,4 +17,4 @@ diskput: diskput.c
 
 .PHONY: clean
 clean:
-	rm -rf *.o *.exe  disk\w{3,4}
+	rm -rf *.o *.exe
