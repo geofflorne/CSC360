@@ -67,7 +67,7 @@ void printStats(pid_t pid) {
   while (fgets(status_array[i], BUFFERSIZE, fp) != NULL) {
     i++;
   }
-  
+
   //the infromation we need is in the last two elements
   sscanf(status_array[i - 2], "voluntary_ctxt_switches: %d", & voluntary);
   sscanf(status_array[i - 1], "nonvoluntary_ctxt_switches: %d", & nonvoluntary);
