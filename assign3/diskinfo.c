@@ -4,17 +4,36 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-//#include "disk.h"
 
-int get_FAT_value(int n){
+
+int get_FAT_value(unsigned char* addr, int n, int offset){
+	int left, right;
+
+	left = addr[(offset + (3 * n / 2))];
+	right  = addr[(offset + (1 + 3 * n / 2))];
 	if(n%2 == 0){
-		return (1+(3*n)/2) + (((3*n)/2)<<8);
-		}else{
-		return (1+(3*n)/2) + (((3*n)/2)<<4);
+		//low 4 bits of posistion 1+(3*n)/2 and 8 bits of posistion (3*n)/2
+		return ((left ) + ((right & 0x0f)<< 8));
+	}else{
+		//8 bits of posistion 1+(3*n)/2 and high bits of posistion (3*n)/2
+		return (((left & 0xf0) >> 4)) + (right << 4);
 	}
 }
 
-char *volume_label(unsigned char *addr){
+int free_size(unsigned char* addr, int disk_size){
+	int bytes_per_sector = addr[11] + (addr[12]<<8);
+	int offset = bytes_per_sector;
+	int free_size = 0;
+	int i = 0;
+	int fat_val = 0x001;
+	for(i = 0; i < (addr[19] + (addr[20]<<8)); i++){
+		fat_val = get_FAT_value(addr, i, offset);
+		if(fat_val == 0x00) free_size++;
+	}
+	return free_size * 512;
+}
+
+unsigned char *volume_label(unsigned char *addr){
 	int bytes_per_sector = addr[11] + (addr[12]<<8);
 	unsigned int root = bytes_per_sector * 19;
 	while(addr[root] != 0){
@@ -22,7 +41,7 @@ char *volume_label(unsigned char *addr){
 			return addr + root;
 		root += 32;
 	}
-	return "<Could not find volume_label>";
+	return (unsigned char *)"<Could not find volume_label>";
 }
 
 int num_root_dirs(unsigned char *addr){
@@ -60,7 +79,7 @@ int main(int argc, char *argv[]){
 	printf("OS Name: %s\n", addr + 3);
 	printf("Label of the disk: %s\n",volume_label(addr));
 	printf("Total size of the disk: %ld bytes\n", sb.st_size);
-	printf("Free size of the disk: %ld bytes\n", sb.st_size);
+	printf("Free size of the disk: %d bytes\n", free_size(addr, sb.st_size));
 	printf("\n==============\n");
 	printf("The number of files in the root directory (not including subdirectories): %d\n", num_root_dirs(addr));
 	printf("\n==============\n");
