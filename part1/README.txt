@@ -1,6 +1,5 @@
-CSC360 Assignment 1
+CSC360 Part 1
 Geoffrey Lorne
-
 
 Compile:
 gcc PMan.c -lreadline -lhistory -o PMan

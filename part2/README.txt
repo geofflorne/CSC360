@@ -1,6 +1,5 @@
-CSC360 Assignment 2
+CSC360 Part 2
 Geoffrey Lorne
-V00802043
 
 Compile:
 gcc MFS.c -pthread -o MFS
